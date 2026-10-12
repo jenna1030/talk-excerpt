@@ -4,3 +4,5 @@
 #messages .message-row{cursor:crosshair;user-select:none;-webkit-user-select:none}#messages .message-row.is-selected{background:#eaf2e4;border-color:#6e925e;box-shadow:inset 3px 0 #6e925e}#messages.is-dragging,#messages.is-dragging *{cursor:crosshair!important;user-select:none!important}.selection-tools{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:10px 0;color:#5c7750;font-size:12px}.selection-tools button{padding:5px 9px;font-size:12px}
 
 .preset-warning{padding:14px;border:1px solid #e9c28c;border-radius:8px;background:#fff5e5;color:#805023;font-size:13px}#preset-replace{margin-top:20px}#preset-replace h3{font-size:16px}
+
+.row-photo{display:block;max-width:140px;max-height:140px;border-radius:8px;margin:8px 0;object-fit:cover}#message-image-preview img{display:block;max-width:180px;max-height:180px;border-radius:10px;margin:4px 0 8px}
