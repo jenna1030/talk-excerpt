@@ -10,7 +10,13 @@ const color = (v,fallback='#293a38') => /^#[0-9a-f]{6}$/i.test(v)?v:fallback;
 const muted=(bg,alpha=.45)=>{const c=color(bg,'#ffffff'),[r,g,b]=[1,3,5].map(i=>parseInt(c.slice(i,i+2),16));return r*.299+g*.587+b*.114>140?`rgba(0,0,0,${alpha})`:`rgba(255,255,255,${alpha+.15})`;};
 const contrast=bg=>muted(bg,1).startsWith('rgba(0')?'#1d1d1d':'#ffffff';
 // Export colors per project; defaults match the original look so older projects render the same.
-const themes={기본:{bg:'#eff2ec',text:'#34423c',fold:'#e3e9dc',accent:'#4f5f55'},'남색·아이보리':{bg:'#fff5ee',text:'#1d2951',fold:'#1d2951',accent:'#990000'}};
+const themes={기본:{bg:'#eff2ec',text:'#34423c',fold:'#e3e9dc',accent:'#4f5f55'},'남색·아이보리':{bg:'#fff5ee',text:'#1d2951',fold:'#1d2951',accent:'#990000'},
+ '카톡 하늘':{bg:'#b2c7d9',text:'#1e2b38',fold:'#9ab3c9',accent:'#3d5a78'},
+ 벚꽃:{bg:'#fff0f3',text:'#4a2c35',fold:'#f6cdd7',accent:'#c2456b'},
+ 라벤더:{bg:'#f3f0fa',text:'#3b3355',fold:'#ddd5f0',accent:'#6b5bb5'},
+ 민트:{bg:'#e9f6f1',text:'#23423a',fold:'#c9e8dc',accent:'#2b8a6e'},
+ 모노:{bg:'#f4f4f4',text:'#222222',fold:'#dcdcdc',accent:'#333333'},
+ 밤하늘:{bg:'#1f2433',text:'#e8eaf2',fold:'#323a55',accent:'#8fa8ff'}};
 const themeOf=s=>({...themes.기본,...s.theme});
 const key='talk-excerpt-v1';
 let state={version:1,id:uid(),title:'',url:'',people:[],blocks:[]};
@@ -38,6 +44,7 @@ function renderPeople(){const q=$('person-search').value.toLowerCase();$('people
 function replyLabel(m){const o=m.reply.kind==='local'?messages().find(x=>x.id===m.reply.id):null;return o?`${person(o.person).name}: ${snippet(o).slice(0,60)}`:`${m.reply.name||'다른 글'}: ${(m.reply.text||'').replace(/\s+/g,' ').slice(0,60)}`;}
 function row(m){return `<article class="message-row" data-message-id="${m.id}"><div class="row-head"><input type="checkbox" aria-label="대화 선택" data-select="${m.id}" ${selected.has(m.id)?'checked':''}><strong>${esc(person(m.person).name)}</strong><small>${esc([m.date,m.time].filter(Boolean).join(' '))}</small></div>${m.reply?`<small class="row-reply">↳ ${esc(replyLabel(m))}</small>`:''}${safePhoto(m.image||'')?`<img class="row-photo" src="${esc(safePhoto(m.image))}" alt="사진">`:''}${m.text?`<p>${esc(m.text)}</p>`:''}<div class="row-actions">${[['edit','수정'],['reply','답장'],['insert','아래 끼워넣기'],['up','↑'],['down','↓'],['link','링크 복사'],['delete','삭제']].map(([a,n])=>`<button data-action="${a}" data-id="${m.id}">${n}</button>`).join('')}</div></article>`;}
 function foldRow(b,i){const prev=state.blocks[i-1],next=state.blocks[i+1],many=b.children.length>1;return `<section class="fold-row"><div><input aria-label="접기 문구" data-fold-label="${b.id}" value="${esc(b.label)}"><button data-action="unfold" data-id="${b.id}">묶음 해제</button></div><div class="fold-tools"><small>대화 ${b.children.length}개</small><label><input type="checkbox" data-fold-count="${b.id}" ${b.count!==false?'checked':''}> 개수 표시</label>${[['fold-up','↑ 위 대화 넣기',!prev],['fold-top','첫 대화 빼기',!many],['fold-bottom','마지막 대화 빼기',!many],['fold-down','↓ 아래 대화 넣기',!next]].map(([a,n,off])=>`<button data-action="${a}" data-id="${b.id}" ${off?'disabled':''}>${n}</button>`).join('')}</div>${b.children.map(row).join('')}</section>`;}
+$('theme-preset').insertAdjacentHTML('beforeend',Object.keys(themes).map(n=>`<option>${esc(n)}</option>`).join(''));
 function renderTheme(){const t=themeOf(state);$('theme-preset').value=Object.keys(themes).find(n=>Object.entries(themes[n]).every(([k,v])=>t[k].toLowerCase()===v))||'';for(const k in t)$('theme-'+k).value=t[k];}
 function render(){if(typeof finishSelectionDrag==='function')finishSelectionDrag();renderPeople();$('title').value=state.title;$('post-url').value=state.url;$('undo').disabled=!history.length;$('messages').innerHTML=state.blocks.map((b,i)=>b.type==='fold'?foldRow(b,i):row(b)).join('');renderTheme();$('preview-expand').textContent=previewOpen?'전체 접기':'전체 펼치기';$('preview-expand').disabled=!state.blocks.some(b=>b.type==='fold');$('preview').innerHTML=state.blocks.length?output(false):'<p class="hint" style="padding:24px;text-align:center">대화를 추가하면 여기에 표시됩니다.</p>';if(typeof syncSelection==='function')syncSelection();}
 function targetId(id){return state.blocks.find(b=>b.type==='fold'&&b.children.some(m=>m.id===id))?.id||id;}
