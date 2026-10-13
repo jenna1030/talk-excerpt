@@ -36,11 +36,11 @@ function validate(s){
  for(const m of all){validId(m.id);if(m.type!=='message'||typeof m.text!=='string'||!s.people.some(p=>p.id===m.person)||!Array.isArray(m.links)||(m.images!==undefined&&(!Array.isArray(m.images)||m.images.length>30||m.images.some(x=>typeof x!=='string'||!safePhoto(x)))))throw Error('대화 데이터가 잘못되었습니다.');for(const l of m.links)if(typeof l.label!=='string'||!safeUrl(l.url))throw Error('답장 링크가 잘못되었습니다.');if(m.reply&&(!['local','external'].includes(m.reply.kind)||(m.reply.kind==='external'&&!safeUrl(m.reply.url))||(m.reply.origin!==undefined&&!/^t[a-zA-Z0-9-]+$/.test(m.reply.origin))))throw Error('원문 링크가 잘못되었습니다.');}
  for(const m of all)if(m.reply?.kind==='local'&&(!all.some(x=>x.id===m.reply.id)||m.reply.id===m.id))throw Error('답장의 원본을 찾을 수 없습니다.');return s;
 }
-let initialNotice='';try{const saved=localStorage.getItem(key);if(saved)state=validate(JSON.parse(saved));}catch{initialNotice='자동 저장을 불러오지 못했습니다. 프로젝트 파일로 복원할 수 있어요.';}
+let initialNotice='',savedAt=0;try{const saved=localStorage.getItem(key);if(saved){state=validate(JSON.parse(saved));savedAt=Number(localStorage.getItem(key+'-at'))||1;}}catch{initialNotice='자동 저장을 불러오지 못했습니다. 프로젝트 파일로 복원할 수 있어요.';}
 let activePerson=state.people[0]?.id||null,editing=null,insertion=null,history=[],selected=new Set(),previewOpen=false;
 function notice(t){$('status').textContent=t;}
 function checkpoint(){history.push(JSON.stringify(state));if(history.length>50)history.shift();}
-function persist(){try{localStorage.setItem(key,JSON.stringify(state));}catch{notice('자동 저장 공간이 부족합니다. 프로젝트 저장 버튼으로 파일을 보관하세요.');}}
+function persist(){savedAt=Date.now();const json=JSON.stringify(state);let storedSmall=true;try{localStorage.setItem(key,json);localStorage.setItem(key+'-at',String(savedAt));}catch{storedSmall=false;}if(typeof persistLarge==='function')persistLarge(json,savedAt,storedSmall);else if(!storedSmall)notice('자동 저장 공간이 부족합니다. 프로젝트 저장 버튼으로 파일을 보관하세요.');}
 function commit(){persist();render();}
 function person(id){return state.people.find(p=>p.id===id);}
 function avatar(p){return safeImage(p.photo)?`<img class="avatar" src="${esc(safeImage(p.photo))}" alt="">`:`<span class="avatar">${esc(p.name.slice(0,1))}</span>`;}
