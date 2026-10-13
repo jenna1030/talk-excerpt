@@ -9,7 +9,7 @@ function openReply(id=null){
  // Without an id the original lives in another post and arrives as a pasted reply code.
  replySource=m?{kind:'local',id}:null;
  $('reply-title').textContent=m?'답장 달기':'다른 글에 답장';$('reply-code-field').hidden=!!m;$('reply-position-field').hidden=!m;$('reply-code').value='';
- $('reply-quote').innerHTML=m?quoteCard(person(m.person).name,m.text,safePhoto(m.image||'')):'<p class="hint">답장 코드를 붙여 넣으면 원문이 여기에 표시됩니다.</p>';
+ $('reply-quote').innerHTML=m?quoteCard(person(m.person).name,m.text,photos(m)[0]||''):'<p class="hint">답장 코드를 붙여 넣으면 원문이 여기에 표시됩니다.</p>';
  // Usually the other person answers, so default to someone who is not the original author.
  const other=m?state.people.find(p=>p.id!==m.person&&p.side!==person(m.person).side)||state.people.find(p=>p.id!==m.person)||person(m.person):person(activePerson)||state.people[0];
  $('reply-person').innerHTML=state.people.map(p=>`<option value="${p.id}">${esc(p.name)}</option>`).join('');$('reply-person').value=other.id;

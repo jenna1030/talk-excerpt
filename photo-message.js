@@ -22,28 +22,40 @@ function readMessagePhoto(file){
    image.src=url;
  });
 }
-function showMessageImage(){
- const typed=$('message-image-url').value.trim(),src=typed?safeUrl(typed):$('message-image-data').value;
- $('message-image-preview').innerHTML=src?`<img src="${esc(src)}" alt="넣을 사진">`:'';
- $('message-image-clear').hidden=!src&&!typed;
+// The dialog keeps its own photo list; a message may hold up to 30 like a KakaoTalk album.
+const MAX_PHOTOS=30;
+let messagePhotos=[];
+function showMessageImages(){
+ $('message-image-preview').innerHTML=messagePhotos.map((src,i)=>`<figure><img src="${esc(src)}" alt="사진 ${i+1}"><button type="button" data-remove-photo="${i}" aria-label="사진 ${i+1} 빼기">×</button></figure>`).join('');
+ $('message-image-clear').hidden=messagePhotos.length<2;
 }
-function setMessageImage(src){
+function setMessageImages(list){
  messagePhotoRequest++;
- const data=src.startsWith('data:')?safePhoto(src):'';
- $('message-image-data').value=data;$('message-image-url').value=data?'':safeUrl(src);
- $('message-image-status').textContent='';showMessageImage();
+ messagePhotos=list.map(safePhoto).filter(Boolean);
+ $('message-image-url').value='';$('message-image-status').textContent='';showMessageImages();
 }
-$('message-image-file').onchange=async e=>{
- const file=e.target.files[0];if(!file)return;
- const request=++messagePhotoRequest,input=e.target;
- $('message-image-status').textContent='사진을 준비하고 있어요…';
- try{
-   const src=await readMessagePhoto(file);
-   if(request!==messagePhotoRequest)return;
-   $('message-image-data').value=src;$('message-image-url').value='';showMessageImage();
-   $('message-image-status').textContent=`사진이 준비됐어요 (${Math.round(src.length*3/4/1024)}KB). ‘대화 저장’을 누르세요.`;
- }catch(error){if(request===messagePhotoRequest)$('message-image-status').textContent=error.message;}
- finally{input.value='';}
-};
-$('message-image-url').oninput=showMessageImage;
-$('message-image-clear').onclick=()=>setMessageImage('');
+function getMessageImages(){return messagePhotos.slice();}
+async function addPhotoFiles(files){
+ const list=[...files].filter(f=>f.type.startsWith('image/'));if(!list.length)return;
+ const room=MAX_PHOTOS-messagePhotos.length,request=messagePhotoRequest;
+ if(room<=0){$('message-image-status').textContent=`사진은 최대 ${MAX_PHOTOS}장까지 넣을 수 있어요.`;return;}
+ $('message-image-status').textContent=`사진 ${Math.min(list.length,room)}장을 준비하고 있어요…`;
+ let added=0,failed='';
+ for(const file of list.slice(0,room)){
+   try{const src=await readMessagePhoto(file);if(request!==messagePhotoRequest)return;messagePhotos.push(src);added++;showMessageImages();}
+   catch(error){failed=error.message;}
+ }
+ if(request!==messagePhotoRequest)return;
+ $('message-image-status').textContent=[added?`사진 ${added}장을 넣었어요. ‘대화 저장’을 누르세요.`:'',failed&&`넣지 못한 사진이 있어요: ${failed}`,list.length>room?`최대 ${MAX_PHOTOS}장까지만 넣었어요.`:''].filter(Boolean).join(' ');
+}
+function addPhotoUrl(){
+ const url=safeUrl($('message-image-url').value.trim());
+ if(!url)return alert('사진은 http 또는 https 이미지 주소를 입력하세요.');
+ if(messagePhotos.length>=MAX_PHOTOS)return alert(`사진은 최대 ${MAX_PHOTOS}장까지 넣을 수 있어요.`);
+ messagePhotos.push(url);$('message-image-url').value='';showMessageImages();
+}
+$('message-image-file').onchange=async e=>{const input=e.target;try{await addPhotoFiles(input.files);}finally{input.value='';}};
+$('message-image-add').onclick=addPhotoUrl;
+$('message-image-url').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();addPhotoUrl();}});
+$('message-image-preview').onclick=e=>{const b=e.target.closest('[data-remove-photo]');if(!b)return;messagePhotos.splice(Number(b.dataset.removePhoto),1);showMessageImages();};
+$('message-image-clear').onclick=()=>setMessageImages([]);
