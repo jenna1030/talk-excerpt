@@ -59,3 +59,18 @@ $('message-image-add').onclick=addPhotoUrl;
 $('message-image-url').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();addPhotoUrl();}});
 $('message-image-preview').onclick=e=>{const b=e.target.closest('[data-remove-photo]');if(!b)return;messagePhotos.splice(Number(b.dataset.removePhoto),1);showMessageImages();};
 $('message-image-clear').onclick=()=>setMessageImages([]);
+
+// Paste (Ctrl+V) or drop images straight into the message dialog instead of picking files.
+const clipboardImages=data=>[...(data?.files||[])].filter(f=>f.type.startsWith('image/'));
+document.addEventListener('paste',e=>{
+ const files=clipboardImages(e.clipboardData);if(!files.length)return;
+ const dialog=$('message-dialog'),typing=e.target.closest?.('input,textarea,[contenteditable]');
+ // Rich copies (e.g. from a document) carry text too; let a text field receive that text as usual.
+ if(typing&&e.clipboardData.getData('text/plain'))return;
+ if(!dialog.open){if(document.querySelector('dialog[open]')||typing)return;openMessage();if(!dialog.open)return;}
+ e.preventDefault();addPhotoFiles(files);
+});
+const messageDialog=$('message-dialog');
+messageDialog.addEventListener('dragover',e=>{if(!e.dataTransfer?.types.includes('Files'))return;e.preventDefault();messageDialog.classList.add('is-dropping');});
+messageDialog.addEventListener('dragleave',e=>{if(!messageDialog.contains(e.relatedTarget))messageDialog.classList.remove('is-dropping');});
+messageDialog.addEventListener('drop',e=>{messageDialog.classList.remove('is-dropping');const files=clipboardImages(e.dataTransfer);if(!files.length)return;e.preventDefault();addPhotoFiles(files);});
